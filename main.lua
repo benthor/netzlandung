@@ -1,6 +1,8 @@
 function math.dist(x1,y1, x2,y2) return ((x2-x1)^2+(y2-y1)^2)^0.5 end
 
 function love.load()
+  local width = love.graphics.getWidth()
+  local height = love.graphics.getHeight()
   love.keyboard.setKeyRepeat( true )
 
   plane = {
@@ -12,17 +14,25 @@ function love.load()
     returning = true,
   }
   ship = {
-    position = {x = 0, y = 0},
+    position = {x = width, y = height},
     speed = 10,
-    course = 135,
+    course = 300,
     approach = 500,
   }
 
+  function updatePosition(t, dt)
+    local speed = t.speed * dt
+    t.position.x = t.position.x + math.sin(math.rad(t.course)) * speed
+    t.position.y = t.position.y - math.cos(math.rad(t.course)) * speed
+  end
+
+  function angle(point1, point2)
+    return (360+math.deg(math.atan2(point1.x - point2.x, point2.y - point1.y))) % 360
+  end
+
 
   function ship.update(dt)
-    local speed = ship.speed * dt
-    ship.position.x = ship.position.x + math.sin(math.rad(ship.course)) * speed
-    ship.position.y = ship.position.y - math.cos(math.rad(ship.course)) * speed
+    updatePosition(ship, dt)
   end
 
   function ship.draw()
@@ -30,20 +40,16 @@ function love.load()
     love.graphics.translate(ship.position.x, ship.position.y)
     love.graphics.rotate(math.rad(ship.course))
     love.graphics.rectangle("fill", -20, -40, 40, 80)
-    love.graphics.line(0,0,0,ship.approach)
+    --love.graphics.line(0,0,0,ship.approach)
     love.graphics.rotate(-math.rad(ship.course))
     love.graphics.translate(-ship.position.x, -ship.position.y)
   end
 
   function plane.update(dt)
-    local speed = plane.speed * dt
-    plane.position.x = plane.position.x + math.sin(math.rad(plane.course)) * speed
-    plane.position.y = plane.position.y - math.cos(math.rad(plane.course)) * speed
+    updatePosition(plane, dt)
     if next(plane.waypoint) ~= nil  then
-      angle = (360+math.deg(math.atan2(plane.waypoint.x - plane.position.x, plane.position.y - plane.waypoint.y))) % 360
-      print(angle, plane.course)
-
-      if (angle - plane.course + 360) % 360 < (plane.course - angle + 360) % 360 then
+      local angle = angle(plane.waypoint, plane.position)
+      if (angle - plane.course) % 360 < (plane.course - angle) % 360 then
         plane.course = (plane.course + plane.steering * dt) % 360
       else
         plane.course = (plane.course - plane.steering * dt) % 360
@@ -54,25 +60,15 @@ function love.load()
   function plane.draw()
     love.graphics.setColor(0, 255, 0)
 
-    local width = love.graphics.getWidth()
-    local height = love.graphics.getHeight()
     if next(plane.waypoint) ~= nil then
       love.graphics.points(plane.waypoint.x, plane.waypoint.y)
       love.graphics.line(plane.position.x, plane.position.y, plane.waypoint.x, plane.waypoint.y)
     end
-    -- rotate around the center of the screen by angle radians
     love.graphics.translate(plane.position.x, plane.position.y)
     love.graphics.rotate(math.rad(plane.course))
-    --love.graphics.rectangle("fill", plane.position.x, plane.position.y, 10, 10)
     love.graphics.rectangle("fill", -5, -10, 10, 20)
     love.graphics.rotate(-math.rad(plane.course))
     love.graphics.translate(-plane.position.x, -plane.position.y)
-    --love.graphics.translate(-width/2, -height/2)
-    -- draw a white rectangle slightly off center
-    --love.graphics.setColor(0xff, 0xff, 0xff)
-    --love.graphics.rotate(plane.course)
-
-    --love.graphics.rotate(-plane.course)
   end
 
   function plane.flyto(x, y)
@@ -80,7 +76,6 @@ function love.load()
     plane.waypoint.y = y
   end
 
-  x, y, w, h = 20, 20, 60, 20
 end
 
 -- Increase the size of the rectangle every frame.
