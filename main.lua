@@ -1,9 +1,10 @@
 function math.dist(x1,y1, x2,y2) return ((x2-x1)^2+(y2-y1)^2)^0.5 end
 
 function love.load()
-  local width = love.graphics.getWidth()
-  local height = love.graphics.getHeight()
+  width = love.graphics.getWidth()
+  height = love.graphics.getHeight()
   love.keyboard.setKeyRepeat( true )
+
 
   plane = {
     position = {x=0, y=0},
@@ -15,8 +16,8 @@ function love.load()
   }
   ship = {
     position = {x = width, y = height},
-    speed = 10,
-    course = 300,
+    speed = 20,
+    course = 280,
     approach = 500,
   }
 
@@ -30,6 +31,14 @@ function love.load()
     return (360+math.deg(math.atan2(point1.x - point2.x, point2.y - point1.y))) % 360
   end
 
+  function approachDistance(plane, ship)
+    distance = math.dist(plane.position.x, plane.position.y, ship.position.x, ship.position.y) / 2
+    diff = math.abs(ship.course - plane.course)
+    if diff > 180 then
+      diff = math.min(ship.course, plane.course) + 360 - math.max(ship.course, plane.course)
+    end
+    return distance + diff * (100/distance)
+  end
 
   function ship.update(dt)
     updatePosition(ship, dt)
@@ -83,8 +92,7 @@ function love.update(dt)
   plane.update(dt)
   ship.update(dt)
   if plane.returning then
-    distance = math.dist(plane.position.x, plane.position.y, ship.position.x, ship.position.y) / 2 
-    distance = distance + math.abs(ship.course - plane.course) * (100/distance)
+    distance = approachDistance(plane, ship)
     plane.waypoint.x = ship.position.x - distance * math.sin(math.rad(ship.course))
     plane.waypoint.y = ship.position.y + distance * math.cos(math.rad(ship.course))
   end
@@ -100,9 +108,11 @@ function love.draw()
   ship.draw()
   if plane.returning then
     love.graphics.setColor(255, 255, 255)
+    distance = approachDistance(plane, ship)
     --love.graphics.points((plane.position.x + ship.position.x) / 2, (plane.position.y + ship.position.y) / 2)
-    distance = math.dist(plane.position.x, plane.position.y, ship.position.x, ship.position.y) / 2 
-    distance = distance + math.abs(ship.course - plane.course) * (100/distance)
+    --distance = math.dist(plane.position.x, plane.position.y, ship.position.x, ship.position.y) / 2 
+    --distance = distance + math.abs(ship.course - plane.course) * (100/distance)
+    --distance = distance + math.min(math.abs(ship.course - plane.course),math.abs(ship.course % 180 - plane.course % 180)) * (100/distance)
     --distance = math.dist(plane.position.x, plane.position.y, ship.position.x, ship.position.y) / 2
     love.graphics.line(ship.position.x, ship.position.y, ship.position.x - distance * math.sin(math.rad(ship.course)), ship.position.y + distance * math.cos(math.rad(ship.course)))
 
@@ -126,6 +136,9 @@ function love.keypressed(key, scancode, isrepeat)
   if key == "return" then
     plane.returning = not plane.returning
     print("returning", plane.returning)
+  end
+  if key == "escape" or key == "q" then
+    love.event.quit()
   end
 end
 
