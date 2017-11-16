@@ -20,6 +20,20 @@ function love.load()
     course = 280,
     approach = 500,
   }
+  points = {}
+
+
+  function mkpoint(point)
+    table.insert(points, {x = point.x, y = point.y, radius = 3, segments = 5})
+  end
+
+  function points.draw()
+    for i,point in ipairs(points) do
+      love.graphics.setColor(255,0,0)
+      --love.graphics.circle("fill", point.x, point.y, point.radius, point.segments)
+      love.graphics.points(point.x, point.y)
+    end
+  end
 
   function updatePosition(t, dt)
     local speed = t.speed * dt
@@ -64,6 +78,7 @@ function love.load()
         plane.course = (plane.course - plane.steering * dt) % 360
       end
     end
+    mkpoint(plane.position)
   end
 
   function plane.draw()
@@ -100,6 +115,7 @@ end
  
 -- Draw a coloured rectangle.
 function love.draw()
+  points.draw()
   love.graphics.setColor(255, 0, 0)
   love.graphics.line(plane.position.x, plane.position.y, ship.position.x, ship.position.y)
   love.graphics.setColor(0, 255, 0)
